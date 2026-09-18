@@ -37,7 +37,7 @@ SECTOR_MAP = {
     "ENERGY": {"ticker": "^CNXENERGY", "stocks": ["RELIANCE.NS", "NTPC.NS", "POWERGRID.NS", "ONGC.NS", "BPCL.NS", "COALINDIA.NS"]}
 }
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=60)
 def fetch_data(tickers):
     df = yf.download(tickers, period="60d", interval="5m", progress=False)
     if df.index.tz is not None:
