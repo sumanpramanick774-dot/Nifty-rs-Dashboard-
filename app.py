@@ -3,545 +3,393 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
-st.set_page_config(page_title="Top-Down F&O RS & Intraday Engine", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="NSE Complete F&O Institutional Engine", page_icon="⚡", layout="wide")
 
 st.markdown("""
-<div style="background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); padding: 16px; border-radius: 12px; color: white; margin-bottom: 20px;">
-    <h2 style="margin: 0; font-size: 24px;">⚡ TOP-DOWN RS, CPR, VWAP & DUAL EMA SCANNER</h2>
-    <p style="margin: 4px 0 0 0; opacity: 0.85; font-size: 13px;">Live Market ⬩ F&O Universe ⬩ Dynamic Crossover Alerts ⬩ Full F&O Filter & Search</p>
+<style>
+.main {background-color: #0b0f19; color: #f3f4f6;}
+.block-container {padding-top: 1rem; padding-bottom: 2rem;}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div style="background: linear-gradient(135deg, #0f172a, #1e293b); padding: 16px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 15px;">
+    <h2 style="margin: 0; color: #38bdf8; font-size: 24px;">⚡ COMPLETE NSE F&O INSTITUTIONAL ENGINE (180+ STOCKS)</h2>
+    <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 13px;">Full F&O Universe ⬩ Sector RS Breakdown ⬩ Mechanical EMA Touch ⬩ Subplot RS Panels</p>
 </div>
 """, unsafe_allow_html=True)
 
-# ১. সম্পূর্ণ F&O সেক্টর ও স্টক ম্যাপিং
+# ১. সম্পূর্ণ ১৮০+ NSE F&O স্টক ও সেক্টর ম্যাপিং
 SECTOR_MAP = {
-    "METAL": {
-        "ticker": "^CNXMETAL",
-        "stocks": ["TATASTEEL.NS", "JSL.NS", "HINDALCO.NS", "JSWSTEEL.NS", "VEDL.NS", "SAIL.NS", "NMDC.NS", "NATIONALUM.NS"]
+    "BANK": {
+        "ticker": "^NSEBANK",
+        "stocks": [
+            "HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "AXISBANK.NS", "KOTAKBANK.NS", 
+            "INDUSINDBK.NS", "BANDHANBNK.NS", "AUBANK.NS", "BANKBARODA.NS", "PNB.NS", 
+            "CANBK.NS", "FEDERALBNK.NS", "IDFCFIRSTB.NS", "RBLBANK.NS"
+        ]
     },
     "AUTO": {
         "ticker": "^CNXAUTO",
-        "stocks": ["TATAMOTORS.NS", "M&M.NS", "MARUTI.NS", "BAJAJ-AUTO.NS", "HEROMOTOCO.NS", "EICHERMOT.NS", "TVSMOTOR.NS", "ASHOKLEY.NS"]
-    },
-    "BANK": {
-        "ticker": "^NSEBANK",
-        "stocks": ["HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "AXISBANK.NS", "KOTAKBANK.NS", "INDUSINDBK.NS", "BANDHANBNK.NS", "AUBANK.NS"]
+        "stocks": [
+            "TATAMOTORS.NS", "M&M.NS", "MARUTI.NS", "BAJAJ-AUTO.NS", "HEROMOTOCO.NS", 
+            "EICHERMOT.NS", "TVSMOTOR.NS", "ASHOKLEY.NS", "BHARATFORG.NS", "BALKRISIND.NS", 
+            "MRF.NS", "APOLLOTYRE.NS", "BOSCHLTD.NS", "MOTHERSON.NS", "ESCORTS.NS"
+        ]
     },
     "IT": {
         "ticker": "^CNXIT",
-        "stocks": ["TCS.NS", "INFY.NS", "HCLTECH.NS", "WIPRO.NS", "TECHM.NS", "LTIM.NS", "COFORGE.NS", "PERSISTENT.NS"]
+        "stocks": [
+            "TCS.NS", "INFY.NS", "HCLTECH.NS", "WIPRO.NS", "TECHM.NS", 
+            "LTIM.NS", "COFORGE.NS", "PERSISTENT.NS", "MPHASIS.NS", "LTTS.NS", 
+            "OFSS.NS", "TATAELXSI.NS", "BSOFT.NS"
+        ]
+    },
+    "METAL": {
+        "ticker": "^CNXMETAL",
+        "stocks": [
+            "TATASTEEL.NS", "JSL.NS", "HINDALCO.NS", "JSWSTEEL.NS", "VEDL.NS", 
+            "SAIL.NS", "NMDC.NS", "NATIONALUM.NS", "JINDALSTEL.NS", "HINDZINC.NS", 
+            "APLAPOLLO.NS"
+        ]
     },
     "PHARMA": {
         "ticker": "^CNXPHARMA",
-        "stocks": ["SUNPHARMA.NS", "CIPLA.NS", "DRREDDY.NS", "APOLLOHOSP.NS", "DIVISLAB.NS", "LUPIN.NS", "AUROPHARMA.NS", "TORNTPHARM.NS"]
+        "stocks": [
+            "SUNPHARMA.NS", "CIPLA.NS", "DRREDDY.NS", "APOLLOHOSP.NS", "DIVISLAB.NS", 
+            "LUPIN.NS", "AUROPHARMA.NS", "TORNTPHARM.NS", "ZYDUSLIFE.NS", "MANKIND.NS", 
+            "ALKEM.NS", "BIOCON.NS", "GLENMARK.NS", "GRANULES.NS", "IPCALAB.NS", "LAURUSLABS.NS", "ABBOTINDIA.NS"
+        ]
     },
     "ENERGY": {
         "ticker": "^CNXENERGY",
-        "stocks": ["RELIANCE.NS", "NTPC.NS", "POWERGRID.NS", "ONGC.NS", "BPCL.NS", "COALINDIA.NS", "IOC.NS", "GAIL.NS"]
+        "stocks": [
+            "RELIANCE.NS", "NTPC.NS", "POWERGRID.NS", "ONGC.NS", "BPCL.NS", 
+            "COALINDIA.NS", "IOC.NS", "GAIL.NS", "TATAPOWER.NS", "ADANIGREEN.NS", 
+            "ADANIENSOL.NS", "PETRONET.NS", "IGL.NS", "MGL.NS", "OIL.NS"
+        ]
     },
     "FMCG": {
         "ticker": "^CNXFMCG",
-        "stocks": ["ITC.NS", "HINDUNILVR.NS", "NESTLEIND.NS", "BRITANNIA.NS", "TATACONSUM.NS", "DABUR.NS", "GODREJCP.NS"]
+        "stocks": [
+            "ITC.NS", "HINDUNILVR.NS", "NESTLEIND.NS", "BRITANNIA.NS", "TATACONSUM.NS", 
+            "DABUR.NS", "GODREJCP.NS", "MARICO.NS", "COLPAL.NS", "MCDOWELL-N.NS", 
+            "VBL.NS", "UBL.NS", "RADICO.NS", "BALRAMCHIN.NS"
+        ]
+    },
+    "FIN_SERVICES": {
+        "ticker": "NIFTY_FIN_SERVICE.NS",
+        "stocks": [
+            "BAJFINANCE.NS", "BAJAJFINSV.NS", "CHOLAFIN.NS", "SHRIRAMFIN.NS", "MUTHOOTFIN.NS", 
+            "M&MFIN.NS", "HDFCLIFE.NS", "SBILIFE.NS", "ICICIPRULI.NS", "ICICIGI.NS", 
+            "PFC.NS", "RECLTD.NS", "LICHSGFIN.NS", "MANAPPURAM.NS", "L&TFH.NS", "HDFCAMC.NS"
+        ]
+    },
+    "INFRA_CAPGOODS": {
+        "ticker": "^CNXINFRA",
+        "stocks": [
+            "LT.NS", "BHARTIARTL.NS", "ULTRACEMCO.NS", "GRASIM.NS", "ADANIPORTS.NS", 
+            "SIEMENS.NS", "ABB.NS", "HAL.NS", "BEL.NS", "BHEL.NS", 
+            "CUMMINSIND.NS", "ASTRAL.NS", "POLYCAB.NS", "HAVELLS.NS", "VOLTAS.NS", "INDUSTOWER.NS"
+        ]
+    },
+    "REALTY": {
+        "ticker": "^CNXREALTY",
+        "stocks": [
+            "DLF.NS", "GODREJPROP.NS", "OBERORLTY.NS", "PHOENIXLTD.NS", "PRESTIGE.NS", "BRIGADE.NS"
+        ]
+    },
+    "CONSUMER_SERVICES_OTHERS": {
+        "ticker": "^NSEI",
+        "stocks": [
+            "TRENT.NS", "NAUKRI.NS", "INDIGO.NS", "PIDILITIND.NS", "SRF.NS", 
+            "CONCOR.NS", "PIIND.NS", "DEEPAKNTR.NS", "TATACHEM.NS", "GUJGASLTD.NS", 
+            "AMBUJACEM.NS", "ACC.NS", "DALBHARAT.NS", "JUBLFOOD.NS", "PAGEIND.NS", 
+            "INDIAMART.NS", "IRCTC.NS", "ABCAPITAL.NS", "GMRINFRA.NS", "IDEA.NS"
+        ]
     }
 }
 
-ALL_STOCKS = sorted(list(set([stk for sec in SECTOR_MAP.values() for stk in sec["stocks"]])))
-STOCK_TO_SECTOR = {stk: sec for sec, val in SECTOR_MAP.items() for stk in val["stocks"]}
+ALL_STOCKS = sorted(list(set([s for sec in SECTOR_MAP.values() for s in sec["stocks"]])))
+STOCK_TO_SEC = {s: sec for sec, val in SECTOR_MAP.items() for s in val["stocks"]}
 
-# ২. ডেটা লোড ফাংশন
+# ২. ডেটা ক্যাশিং পাইপলাইন
 @st.cache_data(ttl=60)
-def fetch_data(tickers):
-    df = yf.download(tickers, period="5d", interval="5m", progress=False)
-    if df.empty:
+def get_intraday_5m(tickers):
+    try:
+        df = yf.download(list(tickers), period="5d", interval="5m", progress=False, threads=True)
+        if df.empty: return df
+        df.index = df.index.tz_localize("UTC").tz_convert("Asia/Kolkata") if df.index.tz is None else df.index.tz_convert("Asia/Kolkata")
         return df
-    if df.index.tz is not None:
-        df = df.tz_convert("Asia/Kolkata")
-    else:
-        df = df.tz_localize("UTC").tz_convert("Asia/Kolkata")
-    return df
+    except Exception: return pd.DataFrame()
 
-@st.cache_data(ttl=300)
-def fetch_daily_data(tickers):
-    return yf.download(tickers, period="1mo", interval="1d", progress=False)
+@st.cache_data(ttl=600)
+def get_daily_5y(tickers):
+    try:
+        return yf.download(list(tickers), period="5y", interval="1d", progress=False, threads=True)
+    except Exception: return pd.DataFrame()
 
-# সাইডবার কন্ট্রোল প্যানেল
-st.sidebar.header("⚙️ কন্ট্রোল প্যানেল")
-mode = st.sidebar.radio("অপারেশন মোড:", [
-    "🔴 Live Market (Sector Scope)", 
-    "⏪ Historical Replay (Backtest)", 
-    "🔍 F&O All Stocks Scanner"
+def get_col(df, field, tk):
+    try:
+        res = df[field][tk].dropna()
+        return res if not res.empty else pd.Series(dtype=float)
+    except Exception: return pd.Series(dtype=float)
+
+def calc_ma(series, period, kind="EMA"):
+    return series.ewm(span=period, adjust=False).mean() if kind == "EMA" else series.rolling(period).mean()
+
+def calc_vwap(df, tk):
+    h = get_col(df, "High", tk); l = get_col(df, "Low", tk); c = get_col(df, "Close", tk); v = get_col(df, "Volume", tk)
+    x = pd.concat([h, l, c, v], axis=1).dropna()
+    x.columns = ["h", "l", "c", "v"]
+    if x.empty: return pd.Series(dtype=float)
+    typical = (x.h + x.l + x.c) / 3
+    cum_vol = x.v.groupby(x.index.date).cumsum()
+    cum_vp = (typical * x.v).groupby(x.index.date).cumsum()
+    return (cum_vp / cum_vol.replace(0, np.nan)).reindex(x.index)
+
+def classify_touch(c, o, h, l, ma_s, tol=0.15, mom_lb=5, mom_thr=0.4):
+    if len(c) < max(3, mom_lb + 2): return ('No Touch', 'None', 'None', 0.0)
+    m = float(ma_s.iloc[-1]); price = float(c.iloc[-1]); hi = float(h.iloc[-1]); lo = float(l.iloc[-1])
+    touched = (lo <= m * (1 + tol/100) and hi >= m * (1 - tol/100)) or abs(price - m) / abs(m) * 100 <= tol
+    if not touched: return ('No Touch', 'None', 'None', 0.0)
+    prev = float(c.iloc[-2]); prev_m = float(ma_s.iloc[-2])
+    direction = 'From Above' if prev > prev_m else ('From Below' if prev < prev_m else 'At MA')
+    base = float(c.iloc[-mom_lb-1]); end = float(c.iloc[-2]); move = (end - base) / base * 100 if base else 0
+    prior = 'Bullish' if move >= mom_thr else ('Bearish' if move <= -mom_thr else 'Neutral')
+    if prior == 'Bullish' and direction == 'From Above': typ = 'Bullish Momentum Pullback'
+    elif prior == 'Bearish' and direction == 'From Below': typ = 'Bearish Momentum Pullback'
+    elif prior == 'Bullish' and direction == 'From Below': typ = 'Bullish Reclaim/Retest'
+    elif prior == 'Bearish' and direction == 'From Above': typ = 'Bearish Breakdown Retest'
+    else: typ = f'Normal Touch ({direction})'
+    return ('Touch', direction, typ, round(move, 2))
+
+# ৩. সাইডবার সেটিংস
+st.sidebar.header("⚙️ সিস্টেম কন্ট্রোল")
+engine_mode = st.sidebar.radio("অপারেশন মোড:", ["🔴 Live Market Engine", "⏪ Historical Replay"])
+ma_kind = st.sidebar.selectbox("MA ধরণ:", ["EMA", "SMA"])
+fast_p = st.sidebar.number_input("Fast MA:", 3, 100, 13)
+slow_p = st.sidebar.number_input("Slow MA:", 5, 200, 21)
+trend_p = st.sidebar.number_input("Trend MA:", 10, 500, 50)
+p1_val = st.sidebar.number_input("Swing RS 1 (দিন):", 5, 100, 21)
+p2_val = st.sidebar.number_input("Swing RS 2 (দিন):", 10, 200, 50)
+
+# ডেটা ফেচিং
+with st.spinner(f"⏳ সম্পূর্ণ F&O ইউনিভার্সের ({len(ALL_STOCKS)} স্টক) ডেটা লোড হচ্ছে..."):
+    all_syms = ["^NSEI"] + [v["ticker"] for v in SECTOR_MAP.values()] + ALL_STOCKS
+    intra_data = get_intraday_5m(all_syms)
+    daily_data = get_daily_5y(all_syms)
+
+if intra_data.empty or daily_data.empty:
+    st.error("ডেটা লোড করা যায়নি। অনুগ্রহ করে পেজটি Refresh করুন।")
+    st.stop()
+
+# টাইম কাট লজিক
+avail_dates = sorted(list(set(intra_data.index.date)), reverse=True)
+if engine_mode == "⏪ Historical Replay":
+    sel_date = st.sidebar.date_input("তারিখ বাছুন:", avail_dates[0], min_value=min(avail_dates), max_value=max(avail_dates))
+    day_df = intra_data[intra_data.index.date == sel_date]
+    if day_df.empty: st.warning("উক্ত তারিখে ডেটা নেই।"); st.stop()
+    cut_time = st.sidebar.select_slider("সময় নির্বাচন:", options=list(day_df.index), value=list(day_df.index)[-1], format_func=lambda x: x.strftime("%H:%M"))
+else:
+    sel_date = avail_dates[0]
+    cut_time = intra_data[intra_data.index.date == sel_date].index[-1]
+
+cut_intra = intra_data[(intra_data.index.date == sel_date) & (intra_data.index <= cut_time)]
+nifty_c = get_col(cut_intra, "Close", "^NSEI")
+nifty_o = get_col(cut_intra, "Open", "^NSEI")
+nifty_ret = ((nifty_c.iloc[-1] - nifty_o.iloc[0]) / nifty_o.iloc[0]) * 100 if not nifty_c.empty else 0
+n_hr_open = nifty_c.iloc[-12] if len(nifty_c) >= 12 else nifty_c.iloc[0]
+nifty_hr_ret = ((nifty_c.iloc[-1] - n_hr_open) / n_hr_open) * 100 if n_hr_open > 0 else 0
+
+st.info(f"📍 স্ন্যাপশট: **{cut_time.strftime('%d-%b-%Y %I:%M %p')}** | Nifty 50: **{nifty_ret:+.2f}%** | মোট স্টক: **{len(ALL_STOCKS)} টি**")
+
+# ড্যাশবোর্ড ট্যাবসমূহ
+tab_sec_rs, tab_ema_scanner, tab_swing = st.tabs([
+    "🌐 Sector RS & Stock Drilldown",
+    "🎯 EMA Momentum & Touch Scanner",
+    "🚀 5Y Swing & Subplot RS Chart"
 ])
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("🎯 Crossover EMA সেটিংস (5m)")
-fast_ema_val = st.sidebar.number_input("Fast EMA পিরিয়ড:", min_value=3, max_value=100, value=13, step=1)
-slow_ema_val = st.sidebar.number_input("Slow EMA পিরিয়ড:", min_value=5, max_value=200, value=21, step=1)
-
-st.sidebar.markdown("---")
-st.sidebar.subheader("📊 Trend Filter EMA (Intraday)")
-trend_ema_val = st.sidebar.number_input("Trend EMA (যেমন: 50, 100, 200):", min_value=10, max_value=500, value=50, step=1)
-
-# ডেটা ফেচ
-all_indices = ["^NSEI"] + [v["ticker"] for v in SECTOR_MAP.values()]
-with st.spinner("⏳ মার্কেট ডেটা প্রসেস হচ্ছে..."):
-    idx_raw = fetch_data(all_indices)
-    all_stk_raw = fetch_data(ALL_STOCKS)
-    daily_raw = fetch_daily_data(ALL_STOCKS)
-
-available_dates = sorted(list(set(idx_raw.index.date)), reverse=True)
-
-if mode in ["🔴 Live Market (Sector Scope)", "🔍 F&O All Stocks Scanner"]:
-    target_date = available_dates[0]
-    sub_df = idx_raw[idx_raw.index.date == target_date]
-    target_timestamp = sub_df.index[-1]
-    st.sidebar.success(f"Snapshot Time: {target_timestamp.strftime('%d-%b-%Y %H:%M')}")
-else:
-    target_date = st.sidebar.selectbox("তারিখ বাছুন:", available_dates)
-    sub_df = idx_raw[idx_raw.index.date == target_date]
-    day_times = sorted(list(set([t.time() for t in sub_df.index])))
-    selected_time = st.sidebar.select_slider(
-        "সময় স্লাইডার:", options=day_times, value=day_times[len(day_times)//2], format_func=lambda x: x.strftime("%H:%M")
-    )
-    target_timestamp = pd.Timestamp.combine(target_date, selected_time).tz_localize("Asia/Kolkata")
-
-# নিফটি রিটার্ন
-cut_idx = sub_df[sub_df.index <= target_timestamp]
-nifty_open = cut_idx["Open"]["^NSEI"].dropna().iloc[0]
-nifty_ltp = cut_idx["Close"]["^NSEI"].dropna().iloc[-1]
-nifty_ret = ((nifty_ltp - nifty_open) / nifty_open) * 100
-
-st.markdown(f"### 📍 Snapshot: `{target_timestamp.strftime('%d-%b-%Y %I:%M %p')}` | Nifty 50: **{nifty_ret:+.2f}%** ({'🟢 BULLISH' if nifty_ret >= 0 else '🔴 BEARISH'})")
-
-stk_sub = all_stk_raw[all_stk_raw.index.date == target_date]
-stk_cut = stk_sub[stk_sub.index <= target_timestamp]
-
-# ==============================================================
-# মোড ৩: F&O ALL STOCKS SCANNER (আলাদা ইন্টারফেস)
-# ==============================================================
-if mode == "🔍 F&O All Stocks Scanner":
-    st.markdown("---")
-    st.subheader("🌐 সম্পূর্ণ F&O ইউনিভার্স স্ক্যানার ও ফিল্টার")
-
-    all_res = []
-    for s in ALL_STOCKS:
-        try:
-            c_series = stk_cut["Close"][s].dropna()
-            if len(c_series) < 2:
-                continue
-            stk_open = stk_cut["Open"][s].dropna().iloc[0]
-            stk_ltp = c_series.iloc[-1]
-            stk_ret = ((stk_ltp - stk_open) / stk_open) * 100
-            rs_score = round(stk_ret - nifty_ret, 2)
-            clean_name = s.replace(".NS", "")
-
-            # VWAP
-            vol_series = stk_cut["Volume"][s].dropna()
-            h_series = stk_cut["High"][s].dropna()
-            l_series = stk_cut["Low"][s].dropna()
-            typical_price = (h_series + l_series + c_series) / 3
-            cum_vp = (typical_price * vol_series).cumsum()
-            cum_vol = vol_series.cumsum()
-            vwap = (cum_vp / cum_vol).iloc[-1]
-            vwap_status = "Above" if stk_ltp >= vwap else "Below"
-
-            # CPR
-            d_hist = daily_raw["Close"][s].dropna()
-            d_idx = d_hist.index[d_hist.index.date < target_date]
-            if len(d_idx) > 0:
-                prev_day = d_idx[-1]
-                prev_high = daily_raw["High"][s].loc[prev_day]
-                prev_low = daily_raw["Low"][s].loc[prev_day]
-                prev_close = daily_raw["Close"][s].loc[prev_day]
-                pivot = (prev_high + prev_low + prev_close) / 3
-                bc = (prev_high + prev_low) / 2
-                tc = (pivot - bc) + pivot
-                cpr_top = max(tc, bc)
-                cpr_bottom = min(tc, bc)
-                if stk_ltp > cpr_top:
-                    cpr_status = "Above CPR"
-                elif stk_ltp < cpr_bottom:
-                    cpr_status = "Below CPR"
-                else:
-                    cpr_status = "Inside CPR"
-            else:
-                cpr_status = "N/A"
-
-            # Trend EMA
-            all_c = all_stk_raw["Close"][s].dropna().loc[:target_timestamp]
-            trend_series = all_c.ewm(span=trend_ema_val, adjust=False).mean()
-            trend_val = trend_series.iloc[-1]
-            trend_status = "Above" if stk_ltp >= trend_val else "Below"
-
-            # Crossover
-            fast_ema = all_c.ewm(span=fast_ema_val, adjust=False).mean()
-            slow_ema = all_c.ewm(span=slow_ema_val, adjust=False).mean()
-            f_curr, f_prev = fast_ema.iloc[-1], fast_ema.iloc[-2]
-            s_curr, s_prev = slow_ema.iloc[-1], slow_ema.iloc[-2]
-
-            if f_curr > s_curr and f_prev <= s_prev:
-                cross_event = "Golden Cross"
-            elif f_curr < s_curr and f_prev >= s_prev:
-                cross_event = "Death Cross"
-            elif f_curr > s_curr:
-                cross_event = "Bullish Trend"
-            else:
-                cross_event = "Bearish Trend"
-
-            all_res.append({
-                "Stock": clean_name,
-                "Sector": STOCK_TO_SECTOR.get(s, "F&O"),
-                "LTP": round(stk_ltp, 2),
-                "Change_%": round(stk_ret, 2),
-                "RS_Score": rs_score,
-                "VWAP": vwap_status,
-                "CPR": cpr_status,
-                f"Trend_{trend_ema_val}EMA": trend_status,
-                "EMA_Event": cross_event
-            })
-        except:
-            pass
-
-    full_fno_df = pd.DataFrame(all_res)
-
-    # সার্চ এবং ফিল্টার কন্ট্রোল
-    fc1, fc2, fc3, fc4, fc5 = st.columns([1.5, 1, 1, 1, 1.2])
-
-    with fc1:
-        search_query = st.text_input("🔎 স্টক সার্চ করুন:", placeholder="যেমন: TATASTEEL, RELIANCE...")
-
-    with fc2:
-        vwap_filter = st.selectbox("VWAP ফিল্টার:", ["All", "Above", "Below"])
-
-    with fc3:
-        cpr_filter = st.selectbox("CPR ফিল্টার:", ["All", "Above CPR", "Inside CPR", "Below CPR"])
-
-    with fc4:
-        trend_filter = st.selectbox(f"{trend_ema_val} EMA ফিল্টার:", ["All", "Above", "Below"])
-
-    with fc5:
-        cross_filter = st.selectbox("EMA সিগন্যাল / ক্রসওভার:", [
-            "All", 
-            "Golden Cross", 
-            "Death Cross", 
-            "Bullish Trend", 
-            "Bearish Trend"
-        ])
-
-    filtered_df = full_fno_df.copy()
-
-    if search_query:
-        filtered_df = filtered_df[filtered_df["Stock"].str.contains(search_query.strip().upper(), na=False)]
-
-    if vwap_filter != "All":
-        filtered_df = filtered_df[filtered_df["VWAP"] == vwap_filter]
-
-    if cpr_filter != "All":
-        filtered_df = filtered_df[filtered_df["CPR"] == cpr_filter]
-
-    if trend_filter != "All":
-        filtered_df = filtered_df[filtered_df[f"Trend_{trend_ema_val}EMA"] == trend_filter]
-
-    if cross_filter != "All":
-        filtered_df = filtered_df[filtered_df["EMA_Event"] == cross_filter]
-
-    st.markdown(f"**ফিল্টার করা স্টক সংখ্যা:** `{len(filtered_df)}` টি")
-
-    display_df = filtered_df.copy()
-    display_df["VWAP"] = display_df["VWAP"].apply(lambda x: "🟢 Above" if x == "Above" else "🔴 Below")
-    display_df["CPR"] = display_df["CPR"].apply(lambda x: "🟢 Above CPR" if x == "Above CPR" else ("🔴 Below CPR" if x == "Below CPR" else "🟡 Inside CPR"))
-    display_df[f"Trend_{trend_ema_val}EMA"] = display_df[f"Trend_{trend_ema_val}EMA"].apply(lambda x: f"🟢 Above {trend_ema_val}" if x == "Above" else f"🔴 Below {trend_ema_val}")
-    display_df["EMA_Event"] = display_df["EMA_Event"].apply(lambda x: "🚀 Golden Cross" if x == "Golden Cross" else ("⚠️ Death Cross" if x == "Death Cross" else ("🟢 Bullish" if x == "Bullish Trend" else "🔴 Bearish")))
-
-    st.dataframe(
-        display_df.style.map(lambda v: 'color: #27ae60; font-weight: bold;' if v > 0 else 'color: #e74c3c;', subset=['Change_%', 'RS_Score']),
-        use_container_width=True,
-        hide_index=True
-    )
-
-# ==============================================================
-# মোড ১ ও ২: SECTOR SCOPE & HISTORICAL REPLAY
-# ==============================================================
-else:
-    sec_list = []
+# --------------------------------------------------------------
+# TAB 1: SECTOR RS & STOCK DRILLDOWN
+# --------------------------------------------------------------
+with tab_sec_rs:
+    st.subheader("🏆 Sector Relative Strength (RS) Dashboard")
+    sec_summary = []
     for s_name, s_info in SECTOR_MAP.items():
-        try:
-            sym = s_info["ticker"]
-            s_open = cut_idx["Open"][sym].dropna().iloc[0]
-            s_ltp = cut_idx["Close"][sym].dropna().iloc[-1]
-            s_ret = ((s_ltp - s_open) / s_open) * 100
-            sec_list.append({"Sector": s_name, "Return_%": round(s_ret, 2), "R_Factor": round(s_ret - nifty_ret, 2)})
-        except:
-            pass
+        sym = s_info["ticker"]
+        sc = get_col(cut_intra, "Close", sym)
+        so = get_col(cut_intra, "Open", sym)
+        if not sc.empty and not so.empty:
+            ret = ((sc.iloc[-1] - so.iloc[0]) / so.iloc[0]) * 100
+            sec_summary.append({"Sector": s_name, "Return_%": round(ret, 2), "Daily_RS": round(ret - nifty_ret, 2)})
+    
+    sec_df = pd.DataFrame(sec_summary).sort_values(by="Daily_RS", ascending=False).reset_index(drop=True)
+    c1, c2 = st.columns([1.2, 2.8])
+    with c1:
+        st.dataframe(sec_df.style.map(lambda v: 'color: #10b981; font-weight: bold;' if v > 0 else 'color: #ef4444; font-weight: bold;', subset=['Daily_RS', 'Return_%']), use_container_width=True, hide_index=True)
+    with c2:
+        selected_sec = st.radio("সেক্টর নির্বাচন করুন (ড্রিলডাউন ফিল্টারের জন্য):", sec_df["Sector"].tolist(), horizontal=True)
 
-    sec_df = pd.DataFrame(sec_list).sort_values(by="R_Factor", ascending=False).reset_index(drop=True)
-
-    col_sec, col_trend = st.columns([1.1, 1.9])
-
-    with col_sec:
-        st.subheader("🏆 Sector Selection")
-        selected_sector = st.radio(
-            "Choose Primary Sector:",
-            sec_df["Sector"].tolist(),
-            index=0,
-            horizontal=True
-        )
-        st.dataframe(
-            sec_df.style.map(lambda v: 'color: #27ae60; font-weight: bold;' if v > 0 else 'color: #e74c3c;', subset=['R_Factor']),
-            use_container_width=True,
-            hide_index=True
-        )
-
-    with col_trend:
-        st.subheader("📈 Sector Trend Graph (Locked)")
-        if "locked_sectors" not in st.session_state:
-            st.session_state.locked_sectors = [selected_sector]
-
-        if selected_sector not in st.session_state.locked_sectors:
-            st.session_state.locked_sectors.append(selected_sector)
-
-        chosen_sectors = st.multiselect(
-            "Visible Sectors in Chart:",
-            options=list(SECTOR_MAP.keys()),
-            default=st.session_state.locked_sectors,
-            key="sector_ms"
-        )
-        st.session_state.locked_sectors = chosen_sectors
-
-        fig_sec = go.Figure()
-        for sec in chosen_sectors:
-            sec_sym = SECTOR_MAP[sec]["ticker"]
-            if sec_sym in cut_idx["Close"]:
-                sec_series = cut_idx["Close"][sec_sym].dropna()
-                sec_open_val = cut_idx["Open"][sec_sym].dropna().iloc[0]
-                if len(sec_series) > 0:
-                    sec_trend = ((sec_series - sec_open_val) / sec_open_val) * 100
-                    fig_sec.add_trace(go.Scatter(x=sec_trend.index, y=sec_trend, mode='lines', name=sec))
-
-        fig_sec.update_layout(
-            height=260,
-            margin=dict(l=10, r=10, t=20, b=10),
-            xaxis=dict(fixedrange=True),
-            yaxis=dict(fixedrange=True, title="% Return"),
-            hovermode="x unified"
-        )
-        st.plotly_chart(fig_sec, use_container_width=True, config={'displayModeBar': True, 'scrollZoom': False})
-
-    sector_ret = sec_df[sec_df["Sector"] == selected_sector]["Return_%"].values[0]
-    stock_tickers = SECTOR_MAP[selected_sector]["stocks"]
-
-    stock_res = []
-    sector_crossovers = []
-
-    for s in stock_tickers:
-        try:
-            c_series = stk_cut["Close"][s].dropna()
-            stk_open = stk_cut["Open"][s].dropna().iloc[0]
-            stk_ltp = c_series.iloc[-1]
-            stk_ret = ((stk_ltp - stk_open) / stk_open) * 100
-            rs_vs_nifty = stk_ret - nifty_ret
-            rs_vs_sector = stk_ret - sector_ret
-            dual_score = round(rs_vs_nifty + rs_vs_sector, 2)
-            clean_name = s.replace(".NS", "")
-
-            # VWAP
-            vol_series = stk_cut["Volume"][s].dropna()
-            h_series = stk_cut["High"][s].dropna()
-            l_series = stk_cut["Low"][s].dropna()
-            typical_price = (h_series + l_series + c_series) / 3
-            cum_vp = (typical_price * vol_series).cumsum()
-            cum_vol = vol_series.cumsum()
-            vwap = (cum_vp / cum_vol).iloc[-1]
-            vwap_status = "🟢 Above" if stk_ltp >= vwap else "🔴 Below"
-
-            # CPR
-            d_hist = daily_raw["Close"][s].dropna()
-            d_idx = d_hist.index[d_hist.index.date < target_date]
-            if len(d_idx) > 0:
-                prev_day = d_idx[-1]
-                prev_high = daily_raw["High"][s].loc[prev_day]
-                prev_low = daily_raw["Low"][s].loc[prev_day]
-                prev_close = daily_raw["Close"][s].loc[prev_day]
-                pivot = (prev_high + prev_low + prev_close) / 3
-                bc = (prev_high + prev_low) / 2
-                tc = (pivot - bc) + pivot
-                cpr_top = max(tc, bc)
-                cpr_bottom = min(tc, bc)
-                cpr_status = "🟢 Above CPR" if stk_ltp > cpr_top else ("🔴 Below CPR" if stk_ltp < cpr_bottom else "🟡 Inside CPR")
-            else:
-                cpr_status = "N/A"
-
-            # Trend EMA
-            all_close = all_stk_raw["Close"][s].dropna().loc[:target_timestamp]
-            trend_val = all_close.ewm(span=trend_ema_val, adjust=False).mean().iloc[-1]
-            trend_status = f"🟢 Above {trend_ema_val} EMA" if stk_ltp >= trend_val else f"🔴 Below {trend_ema_val} EMA"
-
-            # Crossover Check
-            fast_ema = all_close.ewm(span=fast_ema_val, adjust=False).mean()
-            slow_ema = all_close.ewm(span=slow_ema_val, adjust=False).mean()
-            f_curr, f_prev = fast_ema.iloc[-1], fast_ema.iloc[-2]
-            s_curr, s_prev = slow_ema.iloc[-1], slow_ema.iloc[-2]
-
-            if f_curr > s_curr and f_prev <= s_prev:
-                sector_crossovers.append({
-                    "Stock": clean_name,
-                    "LTP": round(stk_ltp, 2),
-                    "Dual_RS": dual_score,
-                    "Event": "🚀 Golden Cross",
-                    "VWAP": vwap_status,
-                    "CPR": cpr_status
-                })
-            elif f_curr < s_curr and f_prev >= s_prev:
-                sector_crossovers.append({
-                    "Stock": clean_name,
-                    "LTP": round(stk_ltp, 2),
-                    "Dual_RS": dual_score,
-                    "Event": "⚠️ Death Cross",
-                    "VWAP": vwap_status,
-                    "CPR": cpr_status
-                })
-
-            stock_res.append({
-                "Stock": clean_name,
-                "LTP": round(stk_ltp, 2),
-                "Change_%": round(stk_ret, 2),
-                "Dual_Score": dual_score,
-                "VWAP": vwap_status,
-                "CPR": cpr_status,
-                f"Trend ({trend_ema_val} EMA)": trend_status
-            })
-        except:
-            pass
-
-    stk_df = pd.DataFrame(stock_res).sort_values(by="Dual_Score", ascending=False).reset_index(drop=True)
-
-    # সরু বার চার্ট ও মাল্টি-স্টক লাইন চার্ট
     st.markdown("---")
-    col_chart_left, col_chart_right = st.columns([1.1, 1.9])
+    st.subheader(f"📋 `{selected_sec}` সেক্টরের অভ্যন্তরীণ স্টকসমূহ (Daily & Hourly RS)")
+    sec_stks = SECTOR_MAP[selected_sec]["stocks"]
+    sec_stk_rows = []
+    for s in sec_stks:
+        c = get_col(cut_intra, "Close", s); o = get_col(cut_intra, "Open", s)
+        if len(c) < 2: continue
+        ltp = c.iloc[-1]; ret = ((ltp - o.iloc[0]) / o.iloc[0]) * 100
+        hr_o = c.iloc[-12] if len(c) >= 12 else c.iloc[0]
+        hr_ret = ((ltp - hr_o) / hr_o) * 100
+        full_c = get_col(intra_data, "Close", s).loc[:cut_time]
+        t_val = calc_ma(full_c, trend_p, ma_kind).iloc[-1]
+        sec_stk_rows.append({
+            "Stock": s.replace(".NS", ""), "LTP": round(ltp, 2), "Change_%": round(ret, 2),
+            "Daily_RS": round(ret - nifty_ret, 2), "Hourly_RS": round(hr_ret - nifty_hr_ret, 2),
+            f"Trend_{trend_p}": "Above" if ltp >= t_val else "Below"
+        })
+    df_sec_stks = pd.DataFrame(sec_stk_rows).sort_values(by="Daily_RS", ascending=False).reset_index(drop=True)
+    st.dataframe(df_sec_stks.style.map(lambda v: 'color: #10b981; font-weight: bold;' if v > 0 else 'color: #ef4444; font-weight: bold;', subset=['Daily_RS', 'Hourly_RS', 'Change_%']), use_container_width=True, hide_index=True)
 
-    with col_chart_left:
-        st.markdown("#### 🔥 Focus Stocks (Dual RS)")
-        if not stk_df.empty:
-            top_picks = stk_df.head(2)["Stock"].tolist()
-            st.caption(f"Top Focus: `{top_picks[0]}` | `{top_picks[1]}`")
-            fig_bar = go.Figure()
-            fig_bar.add_trace(go.Bar(
-                x=stk_df["Stock"],
-                y=stk_df["Dual_Score"],
-                width=0.38,
-                marker_color=["#27ae60" if x >= 0 else "#e74c3c" for x in stk_df["Dual_Score"]],
-                text=[f"{val:+.2f}" for val in stk_df["Dual_Score"]],
-                textposition="outside"
-            ))
-            fig_bar.update_layout(
-                height=280, 
-                margin=dict(l=10, r=10, t=15, b=10), 
-                xaxis=dict(fixedrange=True, tickangle=-45),
-                yaxis=dict(fixedrange=True, title="RS Score")
-            )
-            st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
-
-    with col_chart_right:
-        st.markdown("#### 📊 Multi-Stock RS Trend")
-        available_stock_names = stk_df["Stock"].tolist()
-        default_selected_stocks = available_stock_names[:2] if len(available_stock_names) >= 2 else available_stock_names
-
-        selected_chart_stocks = st.multiselect(
-            "Select stocks to plot:",
-            options=available_stock_names,
-            default=default_selected_stocks,
-            key="multi_stock_ms"
-        )
-
-        fig_multi = go.Figure()
-        for s_name in selected_chart_stocks:
-            ticker_sym = s_name + ".NS"
-            try:
-                s_series = stk_cut["Close"][ticker_sym].dropna()
-                s_open_val = stk_cut["Open"][ticker_sym].dropna().iloc[0]
-                if len(s_series) > 0:
-                    stk_pct = ((s_series - s_open_val) / s_open_val) * 100
-                    fig_multi.add_trace(go.Scatter(x=stk_pct.index, y=stk_pct, mode='lines', name=s_name))
-            except:
-                pass
-
-        fig_multi.update_layout(
-            height=280,
-            margin=dict(l=10, r=10, t=15, b=10),
-            xaxis=dict(fixedrange=True, title="Time"),
-            yaxis=dict(fixedrange=True, title="% Return"),
-            hovermode="x unified"
-        )
-        st.plotly_chart(fig_multi, use_container_width=True, config={'displayModeBar': True, 'scrollZoom': False})
-
-    # টেকনিক্যাল টেবিল (ফুল ভিউ)
-    st.markdown("---")
-    st.subheader(f"📋 {selected_sector} F&O Intraday Technical Table (Full View)")
-    st.dataframe(
-        stk_df.style.map(lambda v: 'color: #27ae60; font-weight: bold;' if v > 0 else 'color: #e74c3c;', subset=['Change_%', 'Dual_Score']),
-        use_container_width=True,
-        hide_index=True
-    )
-
-    # ডুয়াল ক্রসওভার টেবিল
-    st.markdown("---")
-    st.subheader(f"⚡ Crossover Scanner on Current 5m Candle ({fast_ema_val} & {slow_ema_val} EMA)")
-
-    all_fno_crossovers = []
+# --------------------------------------------------------------
+# TAB 2: DEDICATED EMA SCANNER & TOUCH ENGINE
+# --------------------------------------------------------------
+with tab_ema_scanner:
+    st.subheader(f"🎯 Mechanical EMA Scanner (১৮০+ F&O ইউনিভার্স)")
+    
+    scanner_rows = []
     for s in ALL_STOCKS:
         try:
-            all_c = all_stk_raw["Close"][s].dropna().loc[:target_timestamp]
-            if len(all_c) >= 2:
-                f_s = all_c.ewm(span=fast_ema_val, adjust=False).mean()
-                s_s = all_c.ewm(span=slow_ema_val, adjust=False).mean()
-                f_c, f_p = f_s.iloc[-1], f_s.iloc[-2]
-                s_c, s_p = s_s.iloc[-1], s_s.iloc[-2]
-                clean = s.replace(".NS", "")
-                s_open = stk_cut["Open"][s].dropna().iloc[0] if s in stk_cut["Open"] else all_c.iloc[0]
-                stk_ltp = all_c.iloc[-1]
-                stk_ret = ((stk_ltp - s_open) / s_open) * 100
-                rs_score = round(stk_ret - nifty_ret, 2)
-                
-                if f_c > s_c and f_p <= s_p:
-                    all_fno_crossovers.append({
-                        "Stock": clean,
-                        "Sector": STOCK_TO_SECTOR.get(s, "F&O"),
-                        "LTP": round(stk_ltp, 2),
-                        "RS_Score": rs_score,
-                        "Event": "🚀 Golden Cross"
-                    })
-                elif f_c < s_c and f_p >= s_p:
-                    all_fno_crossovers.append({
-                        "Stock": clean,
-                        "Sector": STOCK_TO_SECTOR.get(s, "F&O"),
-                        "LTP": round(stk_ltp, 2),
-                        "RS_Score": rs_score,
-                        "Event": "⚠️ Death Cross"
-                    })
-        except:
-            pass
+            c = get_col(cut_intra, "Close", s); o = get_col(cut_intra, "Open", s); h = get_col(cut_intra, "High", s); l = get_col(cut_intra, "Low", s)
+            if len(c) < max(5, slow_p + 2): continue
+            ltp = c.iloc[-1]; ret = ((ltp - o.iloc[0]) / o.iloc[0]) * 100
+            full_c = get_col(intra_data, "Close", s).loc[:cut_time]
+            f_ma = calc_ma(full_c, fast_p, ma_kind); s_ma = calc_ma(full_c, slow_p, ma_kind); t_ma = calc_ma(full_c, trend_p, ma_kind)
+            
+            # Crossover
+            if f_ma.iloc[-1] > s_ma.iloc[-1] and f_ma.iloc[-2] <= s_ma.iloc[-2]: cross = "Golden Cross"
+            elif f_ma.iloc[-1] < s_ma.iloc[-1] and f_ma.iloc[-2] >= s_ma.iloc[-2]: cross = "Death Cross"
+            elif f_ma.iloc[-1] > s_ma.iloc[-1]: cross = "Bullish Trend"
+            else: cross = "Bearish Trend"
+            
+            # Touch Logic
+            t_status, t_dir, t_type, mom_val = classify_touch(c, o, h, l, f_ma)
+            
+            scanner_rows.append({
+                "Stock": s.replace(".NS", ""), "Sector": STOCK_TO_SEC.get(s, "F&O"), "LTP": round(ltp, 2),
+                "Change_%": round(ret, 2), "Daily_RS": round(ret - nifty_ret, 2), "EMA_Cross": cross,
+                "Touch_Status": t_status, "Touch_Direction": t_dir, "Touch_Setup": t_type, "Prior_Mom_%": mom_val,
+                f"Trend_{trend_p}": "Above" if ltp >= t_ma.iloc[-1] else "Below"
+            })
+        except Exception: pass
+        
+    df_scan = pd.DataFrame(scanner_rows)
+    f1, f2, f3, f4 = st.columns([1, 1, 1, 1])
+    with f1: f_cross = st.selectbox("EMA ক্রসওভার:", ["All", "Golden Cross", "Death Cross", "Bullish Trend", "Bearish Trend"])
+    with f2: f_touch = st.selectbox("EMA টাচ ফিল্টার:", ["All", "Touch", "No Touch"])
+    with f3: f_setup = st.selectbox("মোমেন্টাম সেটআপ:", ["All", "Bullish Momentum Pullback", "Bearish Momentum Pullback", "Bullish Reclaim/Retest", "Bearish Breakdown Retest"])
+    with f4: f_search = st.text_input("স্টক সার্চ:", key="scanner_srch")
 
-    col_cross_sec, col_cross_all = st.columns(2)
+    filt_df = df_scan.copy()
+    if f_cross != "All": filt_df = filt_df[filt_df["EMA_Cross"] == f_cross]
+    if f_touch != "All": filt_df = filt_df[filt_df["Touch_Status"] == f_touch]
+    if f_setup != "All": filt_df = filt_df[filt_df["Touch_Setup"] == f_setup]
+    if f_search: filt_df = filt_df[filt_df["Stock"].str.contains(f_search.strip().upper(), na=False)]
 
-    with col_cross_sec:
-        st.markdown(f"#### 🎯 Current Sector Alerts (`{selected_sector}`)")
-        if sector_crossovers:
-            sec_cross_df = pd.DataFrame(sector_crossovers)
-            st.dataframe(
-                sec_cross_df.style.map(lambda v: 'color: #27ae60; font-weight: bold;' if 'Golden' in str(v) else ('color: #e74c3c; font-weight: bold;' if 'Death' in str(v) else ''), subset=['Event']),
-                use_container_width=True,
-                hide_index=True
-            )
+    st.dataframe(filt_df.style.map(lambda v: 'color: #10b981; font-weight: bold;' if v in ['Golden Cross', 'Bullish Momentum Pullback', 'Bullish Reclaim/Retest'] or (isinstance(v, (int, float)) and v > 0) else ('color: #ef4444; font-weight: bold;' if v in ['Death Cross', 'Bearish Momentum Pullback', 'Bearish Breakdown Retest'] or (isinstance(v, (int, float)) and v < 0) else ''), subset=['Daily_RS', 'Change_%', 'EMA_Cross', 'Touch_Setup']), use_container_width=True, hide_index=True)
+
+# --------------------------------------------------------------
+# TAB 3: 5Y SWING & INTERACTIVE SUBPLOT RS CHART
+# --------------------------------------------------------------
+with tab_swing:
+    st.subheader("🚀 5-Year Swing Scanner & Multi-Toggled Subplot Chart")
+    
+    n_close = get_col(daily_data, "Close", "^NSEI")
+    n1_ret = ((n_close.iloc[-1] - n_close.iloc[-p1_val]) / n_close.iloc[-p1_val]) * 100
+    n2_ret = ((n_close.iloc[-1] - n_close.iloc[-p2_val]) / n_close.iloc[-p2_val]) * 100
+
+    sw_rows = []
+    for s in ALL_STOCKS:
+        try:
+            cd = get_col(daily_data, "Close", s)
+            if len(cd) < max(slow_p, p2_val) + 2: continue
+            r1 = round(((cd.iloc[-1] - cd.iloc[-p1_val]) / cd.iloc[-p1_val]) * 100 - n1_ret, 2)
+            r2 = round(((cd.iloc[-1] - cd.iloc[-p2_val]) / cd.iloc[-p2_val]) * 100 - n2_ret, 2)
+            fd = calc_ma(cd, fast_p, ma_kind); sd = calc_ma(cd, slow_p, ma_kind)
+            c_status = "Golden Cross" if fd.iloc[-1] > sd.iloc[-1] and fd.iloc[-2] <= sd.iloc[-2] else ("Death Cross" if fd.iloc[-1] < sd.iloc[-1] and fd.iloc[-2] >= sd.iloc[-2] else ("Bullish" if fd.iloc[-1] > sd.iloc[-1] else "Bearish"))
+            sw_rows.append({"Stock": s.replace(".NS", ""), "Sector": STOCK_TO_SEC.get(s, "F&O"), "LTP": round(cd.iloc[-1], 2), f"{p1_val}D_RS": r1, f"{p2_val}D_RS": r2, "Signal": c_status})
+        except Exception: pass
+
+    df_sw = pd.DataFrame(sw_rows).sort_values(by=f"{p1_val}D_RS", ascending=False).reset_index(drop=True)
+    st.dataframe(df_sw.style.map(lambda v: 'color: #10b981; font-weight: bold;' if v in ['Golden Cross', 'Bullish'] or (isinstance(v, (int, float)) and v > 0) else ('color: #ef4444; font-weight: bold;' if v in ['Death Cross', 'Bearish'] or (isinstance(v, (int, float)) and v < 0) else ''), subset=[f"{p1_val}D_RS", f"{p2_val}D_RS", "Signal"]), use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+    st.subheader("📈 Interactive Dual-Panel Chart (Price + Toggles on Top, Color-Coded RS Subplot Below)")
+    
+    c_stk, c_tf = st.columns([1.5, 1])
+    with c_stk: chart_stk = st.selectbox("চার্ট বিশ্লেষণের জন্য স্টক নির্বাচন করুন:", df_sw["Stock"].tolist())
+    with c_tf: tf_choice = st.radio("টাইমফ্রেম বাছুন:", ["5m Intraday (Current Day)", "Daily (5-Year Swing)"], horizontal=True)
+
+    # চার্ট ইন্ডিকেটর টগলসমূহ
+    st.markdown("##### 🎛️ চার্ট ইন্ডিকেটর লেয়ার অন/অফ টগল:")
+    tg1, tg2, tg3, tg4, tg5 = st.columns(5)
+    with tg1: show_candles = st.checkbox("ক্যান্ডেলস্টিক/লাইন", value=True)
+    with tg2: show_fast = st.checkbox(f"Fast {ma_kind} ({fast_p})", value=True)
+    with tg3: show_slow = st.checkbox(f"Slow {ma_kind} ({slow_p})", value=True)
+    with tg4: show_trend = st.checkbox(f"Trend {ma_kind} ({trend_p})", value=False)
+    with tg5: show_vwap = st.checkbox("VWAP", value=(tf_choice.startswith("5m")))
+
+    if chart_stk:
+        tk = chart_stk + ".NS"
+        if tf_choice.startswith("5m"):
+            c_series = get_col(cut_intra, "Close", tk)
+            o_series = get_col(cut_intra, "Open", tk)
+            h_series = get_col(cut_intra, "High", tk)
+            l_series = get_col(cut_intra, "Low", tk)
+            ref_ret = nifty_ret
+            stk_cum_ret = ((c_series - o_series.iloc[0]) / o_series.iloc[0]) * 100
+            rs_curve = stk_cum_ret - ref_ret
+            vw_curve = calc_vwap(cut_intra, tk)
+            full_series = get_col(intra_data, "Close", tk).loc[:cut_time]
         else:
-            st.info(f"এই সেক্টরে বর্তমান ক্যান্ডেলে কোনো Cross নেই।")
+            c_series = get_col(daily_data, "Close", tk)
+            o_series = get_col(daily_data, "Open", tk)
+            h_series = get_col(daily_data, "High", tk)
+            l_series = get_col(daily_data, "Low", tk)
+            n_close_full = get_col(daily_data, "Close", "^NSEI")
+            stk_cum_ret = ((c_series - c_series.iloc[0]) / c_series.iloc[0]) * 100
+            n_cum_ret = ((n_close_full - n_close_full.iloc[0]) / n_close_full.iloc[0]) * 100
+            rs_curve = stk_cum_ret - n_cum_ret
+            vw_curve = pd.Series(dtype=float)
+            full_series = c_series
 
-    with col_cross_all:
-        st.markdown("#### 🌐 All F&O Market Crossover Alerts")
-        if all_fno_crossovers:
-            all_cross_df = pd.DataFrame(all_fno_crossovers)
-            st.dataframe(
-                all_cross_df.style.map(lambda v: 'color: #27ae60; font-weight: bold;' if 'Golden' in str(v) else ('color: #e74c3c; font-weight: bold;' if 'Death' in str(v) else ''), subset=['Event']),
-                use_container_width=True,
-                hide_index=True
-            )
-        else:
-            st.info(f"সম্পূর্ণ F&O মার্কেটে বর্তমান ক্যান্ডেলে কোনো Cross নেই।")
+        f_curve = calc_ma(full_series, fast_p, ma_kind).reindex(c_series.index)
+        s_curve = calc_ma(full_series, slow_p, ma_kind).reindex(c_series.index)
+        t_curve = calc_ma(full_series, trend_p, ma_kind).reindex(c_series.index)
+
+        # সাবপ্লট ফিগার (Row 1: প্রাইস, Row 2: কালার-কোডেড RS)
+        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.08, row_heights=[0.72, 0.28], subplot_titles=(f"{chart_stk} প্রাইস ও ইন্ডিকেটর", "Relative Strength (RS) লাইন (Zero-Centric)"))
+
+        if show_candles:
+            fig.add_trace(go.Candlestick(x=c_series.index, open=o_series, high=h_series, low=l_series, close=c_series, name="Price"), row=1, col=1)
+        if show_fast:
+            fig.add_trace(go.Scatter(x=f_curve.index, y=f_curve, mode="lines", name=f"Fast {fast_p}", line=dict(color="#10b981", width=1.5)), row=1, col=1)
+        if show_slow:
+            fig.add_trace(go.Scatter(x=s_curve.index, y=s_curve, mode="lines", name=f"Slow {slow_p}", line=dict(color="#ef4444", width=1.5)), row=1, col=1)
+        if show_trend:
+            fig.add_trace(go.Scatter(x=t_curve.index, y=t_curve, mode="lines", name=f"Trend {trend_p}", line=dict(color="#3b82f6", width=1.5)), row=1, col=1)
+        if show_vwap and not vw_curve.empty:
+            fig.add_trace(go.Scatter(x=vw_curve.index, y=vw_curve, mode="lines", name="VWAP", line=dict(color="#f59e0b", width=1.5)), row=1, col=1)
+
+        # সাবপ্লটে পজিটিভ (সবুজ) ও নেগেটিভ (লাল) RS লাইন
+        rs_pos = rs_curve.where(rs_curve >= 0)
+        rs_neg = rs_curve.where(rs_curve < 0)
+        fig.add_trace(go.Scatter(x=rs_curve.index, y=rs_pos, mode="lines", name="RS Positive", line=dict(color="#10b981", width=2)), row=2, col=1)
+        fig.add_trace(go.Scatter(x=rs_curve.index, y=rs_neg, mode="lines", name="RS Negative", line=dict(color="#ef4444", width=2)), row=2, col=1)
+        fig.add_hline(y=0, line_dash="dash", line_color="#94a3b8", row=2, col=1)
+
+        fig.update_layout(height=650, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark", xaxis_rangeslider_visible=False, hovermode="x unified")
+        st.plotly_chart(fig, use_container_width=True)
